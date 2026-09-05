@@ -1,0 +1,29 @@
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  color: white;
+}
+.layout-principal {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.layout-corpo {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+app-sidebar {
+  width: 220px;
+  background-color: #555555;
+  height: 100%;
+}
+.area-central {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #0b192c;
+}

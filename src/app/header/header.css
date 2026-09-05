@@ -1,0 +1,12 @@
+.header-topo {
+  background-color: #555555;
+  padding: 15px 30px;
+  display: flex;
+  align-items: center;
+}
+.header-topo h1 {
+  color: white;
+  margin: 0;
+  font-size: 40px;
+  font-weight: bold;
+}

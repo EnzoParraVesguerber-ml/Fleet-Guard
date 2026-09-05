@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  background-color: #555555;
+  height: 100%;
+}
+.menu {
+  padding: 30px 20px;
+}
+.menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.menu li {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  cursor: pointer;
+}
+.menu li.active {
+  margin-left: -15px;
+}
