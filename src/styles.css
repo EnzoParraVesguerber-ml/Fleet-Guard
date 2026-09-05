@@ -1,1 +1,33 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root{
+  --bg: #0B0F14;
+  --panel: #131A22;
+  --panel-raised: #17202B;
+  --border: #232E3B;
+  --text: #E7ECF2;
+  --text-dim: #8B97A6;
+  --text-faint: #5C6878;
+  --accent-amber: #E8A33D;
+  --accent-amber-dim: #4A3A1F;
+  --status-ok: #4CAF7D;
+  --status-ok-dim: #1B3327;
+  --status-warn: #E8A33D;
+  --status-warn-dim: #3D2F16;
+  --status-crit: #E15C5C;
+  --status-crit-dim: #3B1F1F;
+  --radius: 10px;
+  --sidebar-w: 232px;
+  --header-h: 68px;
+}
+
+*{ box-sizing: border-box; margin:0; padding:0; }
+
+html, body{
+  height:100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

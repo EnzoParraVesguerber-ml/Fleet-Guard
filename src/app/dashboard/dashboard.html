@@ -1,11 +1,67 @@
-<div class="dashboard-grid">
-  <!-- Indicadores Físicos -->
-  <div class="card">Temperatura do Motor</div>
-  <div class="card">Rotação (RPM)</div>
-  <div class="card">Pressão do Óleo</div>
-  <div class="card">Vibração</div>
+<main class="main">
 
-  <!-- Alertas Preditivos -->
-  <div class="card alert-card">Risco de Falha no Freio</div>
-  <div class="card alert-card">Risco de Superaquecimento (Motor)</div>
-</div>
+  <div class="page-title-row">
+    <div>
+      <div class="page-title">Saúde mecânica — Ônibus 0412</div>
+      <div class="page-subtitle">Leituras dos sensores em tempo real</div>
+    </div>
+    <div class="live-tag"><span class="live-dot"></span>AO VIVO</div>
+  </div>
+
+  <section class="sensor-grid">
+    <app-sensor-card
+      name="Temperatura do motor"
+      unit="°C"
+      [value]="engineTemp.value"
+      [status]="engineTemp.status"
+      [statusText]="engineTemp.statusText"
+      [history]="engineTemp.history">
+    </app-sensor-card>
+
+    <app-sensor-card
+      name="Rotação do motor"
+      unit="rpm"
+      [value]="rpm.value"
+      [status]="rpm.status"
+      [statusText]="rpm.statusText"
+      [history]="rpm.history">
+    </app-sensor-card>
+
+    <app-sensor-card
+      name="Pressão do óleo"
+      unit="psi"
+      [value]="oilPressure.value"
+      [status]="oilPressure.status"
+      [statusText]="oilPressure.statusText"
+      [history]="oilPressure.history">
+    </app-sensor-card>
+
+    <app-sensor-card
+      name="Vibração"
+      unit="mm/s"
+      [value]="vibration.value"
+      [status]="vibration.status"
+      [statusText]="vibration.statusText"
+      [history]="vibration.history">
+    </app-sensor-card>
+  </section>
+
+  <section class="alerts-panel">
+    <div class="alerts-head">
+      <span class="alerts-title">Alertas de status — motor e freios</span>
+      <span class="alerts-count">{{ alerts.length }} ativos</span>
+    </div>
+
+    <div class="alert-row" *ngFor="let alert of alerts">
+      <div class="alert-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.7 17.5A1.8 1.8 0 0 0 4.3 20h15.4a1.8 1.8 0 0 0 1.6-2.5L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
+      </div>
+      <div class="alert-body">
+        <div class="alert-title">{{ alert.title }}</div>
+        <div class="alert-meta">{{ alert.meta }}</div>
+      </div>
+      <div class="alert-time">{{ alert.time }}</div>
+    </div>
+  </section>
+
+</main>

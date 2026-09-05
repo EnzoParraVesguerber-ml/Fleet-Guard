@@ -1,29 +1,17 @@
-:host {
-  display: block;
-  height: 100vh;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  margin: 0;
-  color: white;
+.app{
+  display:grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  min-height:100vh;
 }
-.layout-principal {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+
+app-sidebar, app-header, app-dashboard{
+  display: contents;
 }
-.layout-corpo {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-app-sidebar {
-  width: 220px;
-  background-color: #555555;
-  height: 100%;
-}
-.area-central {
-  flex: 1;
-  height: 100%;
-  overflow-y: auto;
-  background-color: #0b192c;
+
+@media (max-width: 860px){
+  .app{ grid-template-columns: 72px 1fr; }
 }

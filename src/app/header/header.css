@@ -1,12 +1,80 @@
-.header-topo {
-  background-color: #555555;
-  padding: 15px 30px;
-  display: flex;
-  align-items: center;
+.header{
+  grid-area: header;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding: 0 28px;
+  gap: 20px;
 }
-.header-topo h1 {
-  color: white;
-  margin: 0;
-  font-size: 40px;
-  font-weight: bold;
+
+.header-left{
+  display:flex;
+  align-items:center;
+  gap: 16px;
+}
+
+.vehicle-select{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor:pointer;
+}
+
+.vehicle-select .id{ font-weight:600; font-size:13.5px; }
+.vehicle-select .plate{ font-size:11.5px; color: var(--text-faint); font-family:'JetBrains Mono', monospace; }
+.vehicle-select svg{ width:14px; height:14px; color: var(--text-faint); }
+
+.fleet-status{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12.5px;
+  color: var(--text-dim);
+  padding-left:16px;
+  border-left: 1px solid var(--border);
+}
+
+.dot{ width:7px; height:7px; border-radius:50%; }
+.dot.ok{ background: var(--status-ok); box-shadow: 0 0 0 3px var(--status-ok-dim); }
+
+.header-right{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+}
+
+.icon-btn{
+  width:34px; height:34px;
+  border-radius:8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: var(--text-dim);
+  cursor:pointer;
+  position:relative;
+}
+
+.icon-btn svg{ width:16px; height:16px; }
+
+.icon-btn .badge{
+  position:absolute;
+  top:-4px; right:-4px;
+  width:15px; height:15px;
+  border-radius:50%;
+  background: var(--accent-amber);
+  color:#1A1305;
+  font-size:9.5px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 2px solid var(--bg);
 }
