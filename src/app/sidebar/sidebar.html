@@ -1,7 +1,37 @@
-<nav class="menu">
-  <ul>
-    <li class="active">• Dashboard</li>
-    <li>Veículos</li>
-    <li>Histórico</li>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1A1305" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 L20 6 V12 C20 17 16.5 20.5 12 22 C7.5 20.5 4 17 4 12 V6 Z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">FleetGuard</div>
+      <div class="brand-sub">Manutenção preditiva</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Monitoramento</div>
+  <ul class="nav">
+    <li class="nav-item" [class.active]="item.active" *ngFor="let item of navItems">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <span>{{ item.label }}</span>
+    </li>
   </ul>
-</nav>
+
+  <div class="nav-section-label">Sistema</div>
+  <ul class="nav">
+    <li class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 2.5h3.4l.5 2.4a7.4 7.4 0 0 1 2 1.15l2.3-.85 1.7 3-1.85 1.6a7.7 7.7 0 0 1 0 2.4l1.85 1.6-1.7 3-2.3-.85a7.4 7.4 0 0 1-2 1.15l-.5 2.4h-3.4l-.5-2.4a7.4 7.4 0 0 1-2-1.15l-2.3.85-1.7-3 1.85-1.6a7.7 7.7 0 0 1 0-2.4L3.8 8.24l1.7-3 2.3.85a7.4 7.4 0 0 1 2-1.15Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Configurações</span>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="avatar">MG</div>
+    <div class="footer-text">
+      <div class="footer-name">Miguel</div>
+      <div class="footer-role">Gestor de frota</div>
+    </div>
+  </div>
+</aside>
