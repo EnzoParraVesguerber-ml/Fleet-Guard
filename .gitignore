@@ -1,44 +1,52 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# =========================
+# Arquivos de Ambiente / Segurança
+# =========================
+.env
+.env.*
 
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
+# =========================
+# Ambientes Virtuais (Pesados e Locais)
+# =========================
+venv/
+env/
+.venv/
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# =========================
+# Python / Flask
+# =========================
+# Arquivos compilados automaticamente pelo Python
+__pycache__/
+*.py[cod]
+*$py.class
 
-# IDEs and editors
+# Pastas de cache e testes
+.pytest_cache/
+.coverage
+instance/
+
+# =========================
+# Dados e Simulação (Arquivos Massivos)
+# =========================
+# Ignora a pasta inteira onde o gerador salva o arquivo gigante
+edge_simulation/data/
+
+# Ignora arquivos CSV e de log em qualquer lugar do projeto
+*.csv
+*.log
+
+# =========================
+# Configurações de SO e Editores (VS Code, etc)
+# =========================
+# Evita subir arquivos inúteis do sistema operacional e da IDE
+.vscode/
 .idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/mcp.json
-.history/*
-
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
-
-# System files
 .DS_Store
 Thumbs.db
+
+# =========================
+# Frontend (Angular / Node.js)
+# =========================
+# Se o frontend estiver no mesmo repositório, não subir os pacotes baixados
+frontend_app/node_modules/
+frontend_app/dist/
+frontend_app/.angular/
