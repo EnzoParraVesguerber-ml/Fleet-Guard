@@ -33,6 +33,7 @@ edge_simulation/data/
 # Ignora arquivos CSV e de log em qualquer lugar do projeto
 *.csv
 *.log
+*.joblib
 
 # =========================
 # Configurações de SO e Editores (VS Code, etc)
@@ -47,6 +48,6 @@ Thumbs.db
 # Frontend (Angular / Node.js)
 # =========================
 # Se o frontend estiver no mesmo repositório, não subir os pacotes baixados
-frontend_app/node_modules/
-frontend_app/dist/
-frontend_app/.angular/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
