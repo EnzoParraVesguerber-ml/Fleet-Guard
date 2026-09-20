@@ -1,3 +1,7 @@
+:host {
+  display: contents;
+}
+
 .main{
   grid-area: main;
   padding: 24px 28px 28px 28px;
@@ -34,11 +38,16 @@
 
 .sensor-grid{
   display:grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  align-items: stretch;   /* todos os cards da mesma linha com a mesma altura */
 }
 
-@media (max-width: 860px){
+@media (max-width: 1100px){
+  .sensor-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px){
   .sensor-grid{ grid-template-columns: 1fr; }
 }
 
@@ -105,3 +114,4 @@
   color: var(--text-faint);
   flex-shrink:0;
 }
+

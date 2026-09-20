@@ -8,7 +8,7 @@
     <div class="live-tag"><span class="live-dot"></span>AO VIVO</div>
   </div>
 
-  <section class="sensor-grid">
+    <section class="sensor-grid">
     <app-sensor-card
       name="Temperatura do motor"
       unit="°C"
@@ -28,8 +28,17 @@
     </app-sensor-card>
 
     <app-sensor-card
+      name="Velocidade"
+      unit="km/h"
+      [value]="velocity.value"
+      [status]="velocity.status"
+      [statusText]="velocity.statusText"
+      [history]="velocity.history">
+    </app-sensor-card>
+
+    <app-sensor-card
       name="Pressão do óleo"
-      unit="psi"
+      unit="kPa"
       [value]="oilPressure.value"
       [status]="oilPressure.status"
       [statusText]="oilPressure.statusText"
@@ -38,7 +47,7 @@
 
     <app-sensor-card
       name="Vibração"
-      unit="mm/s"
+      unit="g"
       [value]="vibration.value"
       [status]="vibration.status"
       [statusText]="vibration.statusText"

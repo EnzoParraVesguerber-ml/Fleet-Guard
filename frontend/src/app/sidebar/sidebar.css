@@ -1,3 +1,7 @@
+:host {
+  display: contents;
+}
+
 .sidebar{
   grid-area: sidebar;
   background: var(--panel);

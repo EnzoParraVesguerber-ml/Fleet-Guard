@@ -1,22 +1,24 @@
 from flask import Flask
-import sys
-import os
+from flask_cors import CORS
 
-# Adiciona a raiz do projeto ao path para o Python achar a pasta 'database'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from backend.backend_api.app.config import Config
+from backend.database.models import db
 
-from backend_api.app.config import Config
-from database.models import db
 
 def create_app():
     """Factory do aplicativo Flask do FleetGuard."""
     app = Flask(__name__)
+
+    # Aceita tanto localhost quanto 127.0.0.1 na porta 4200 (Angular)
+    CORS(app, resources={r"/api/*": {"origins": [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ]}})
+
     app.config.from_object(Config)
-    
     db.init_app(app)
-    
-    # Cria as tabelas no PostgreSQL automaticamente ao rodar o app
+
     with app.app_context():
         db.create_all()
-    
+
     return app
