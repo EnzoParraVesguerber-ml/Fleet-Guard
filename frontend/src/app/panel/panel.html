@@ -1,0 +1,14 @@
+<section class="panel">
+  <header class="panel-head" *ngIf="heading">
+    <div class="panel-titles">
+      <h3 class="panel-title">{{ heading }}</h3>
+      <p class="panel-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
+    <ng-content select="[panel-actions]"></ng-content>
+  </header>
+
+  <div class="panel-body" [class.flush]="flush">
+    <div class="panel-placeholder" *ngIf="placeholder; else content">{{ placeholder }}</div>
+    <ng-template #content><ng-content></ng-content></ng-template>
+  </div>
+</section>
