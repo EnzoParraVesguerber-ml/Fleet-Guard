@@ -114,7 +114,7 @@
 .footer-role{ font-size:11px; color: var(--text-faint); }
 
 @media (max-width: 860px){
-  .brand-name, .brand-sub, .nav-item span, .footer-text{ display:none; }
+  .brand-name, .brand-sub, .nav-item span, .footer-text, .nav-section-label{ display:none; }
   .nav-item{ justify-content:center; }
   .brand{ justify-content:center; padding-right:0; }
 }
