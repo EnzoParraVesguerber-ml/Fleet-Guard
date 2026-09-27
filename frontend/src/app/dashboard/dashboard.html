@@ -55,6 +55,14 @@
     </app-sensor-card>
   </section>
 
+  <app-motor-telemetry-chart
+    [rpmHistory]="rpm.history"
+    [tempHistory]="engineTemp.history"
+    [velocityHistory]="velocity.history"
+    [oilPressureHistory]="oilPressure.history"
+    [vibrationHistory]="vibration.history">
+  </app-motor-telemetry-chart>
+
   <section class="alerts-panel">
     <div class="alerts-head">
       <span class="alerts-title">Alertas de status — motor e freios</span>

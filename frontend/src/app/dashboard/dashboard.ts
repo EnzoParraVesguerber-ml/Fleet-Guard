@@ -1,3 +1,4 @@
+import { MotorTelemetryChart } from './motor-telemetry-chart/motor-telemetry-chart';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -16,7 +17,7 @@ interface SensorData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, SensorCard],
+  imports: [CommonModule, SensorCard, MotorTelemetryChart],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
