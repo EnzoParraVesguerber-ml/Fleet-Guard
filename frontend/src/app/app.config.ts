@@ -2,11 +2,13 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http'; // IMPORTANTE
 import { routes } from './app.routes';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts'; 
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient() // HABILITA REQUISIÇÕES PARA O FLASK
+    provideHttpClient(), // HABILITA REQUISIÇÕES PARA O FLASK
+    provideCharts(withDefaultRegisterables())
   ]
 };
