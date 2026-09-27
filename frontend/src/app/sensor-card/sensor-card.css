@@ -1,7 +1,14 @@
+:host{
+  display:block;
+  min-width:0;
+}
+
 .sensor-card{
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  height:100%;
   padding: 18px 20px;
   min-height: 190px;
   display:flex;
