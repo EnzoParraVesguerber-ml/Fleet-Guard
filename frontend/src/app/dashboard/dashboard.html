@@ -8,77 +8,59 @@
     <div class="live-tag"><span class="live-dot"></span>AO VIVO</div>
   </div>
 
-    <section class="sensor-grid">
-    <app-sensor-card
-      name="Temperatura do motor"
-      unit="°C"
-      [value]="engineTemp.value"
-      [status]="engineTemp.status"
-      [statusText]="engineTemp.statusText"
-      [history]="engineTemp.history">
+  <!--
+    Grid de 12 colunas. Cada filho escolhe a largura com .span-N:
+      span-12 = linha inteira | span-6 = metade | span-4 = 1/3 | span-3 = 1/4
+    Abaixo de 1280px os cards de sensor viram 2 por linha; abaixo de 860px, 1 por linha.
+  -->
+  <div class="dashboard-grid">
+
+    <!-- Linha 1: predição + status dos subsistemas -->
+    <app-prediction-panel class="span-4" [prediction]="prediction"></app-prediction-panel>
+
+    <app-status-panel class="span-4"
+      heading="Status do motor"
+      subtitle="Temperatura, lubrificação e proteção"
+      [items]="motorStatus">
+    </app-status-panel>
+
+    <app-status-panel class="span-4"
+      heading="Status dos freios"
+      subtitle="Vibração e temperatura de rodagem"
+      [items]="brakeStatus">
+    </app-status-panel>
+
+    <!-- Linha 2: sensores do motor -->
+    <h2 class="group-label span-12">Motor</h2>
+    <app-sensor-card class="span-3 sensor-cell"
+      *ngFor="let s of engineSensors; trackBy: trackByKey"
+      [name]="s.name" [unit]="s.unit" [value]="s.value"
+      [status]="s.status" [statusText]="s.statusText" [history]="s.history">
     </app-sensor-card>
 
-    <app-sensor-card
-      name="Rotação do motor"
-      unit="rpm"
-      [value]="rpm.value"
-      [status]="rpm.status"
-      [statusText]="rpm.statusText"
-      [history]="rpm.history">
+    <!-- Linha 3: sensores de freio e rodagem -->
+    <h2 class="group-label span-12">Freios e rodagem</h2>
+    <app-sensor-card class="span-4 sensor-cell"
+      *ngFor="let s of brakeSensors; trackBy: trackByKey"
+      [name]="s.name" [unit]="s.unit" [value]="s.value"
+      [status]="s.status" [statusText]="s.statusText" [history]="s.history">
     </app-sensor-card>
 
-    <app-sensor-card
-      name="Velocidade"
-      unit="km/h"
-      [value]="velocity.value"
-      [status]="velocity.status"
-      [statusText]="velocity.statusText"
-      [history]="velocity.history">
-    </app-sensor-card>
+    <!-- Linha 4: feed de alertas da frota -->
+    <app-panel class="span-12" heading="Alertas da frota" subtitle="Motor e freios — todos os veículos" [flush]="true">
+      <span panel-actions class="alerts-count">{{ alerts.length }} ativos</span>
 
-    <app-sensor-card
-      name="Pressão do óleo"
-      unit="kPa"
-      [value]="oilPressure.value"
-      [status]="oilPressure.status"
-      [statusText]="oilPressure.statusText"
-      [history]="oilPressure.history">
-    </app-sensor-card>
-
-    <app-sensor-card
-      name="Vibração"
-      unit="g"
-      [value]="vibration.value"
-      [status]="vibration.status"
-      [statusText]="vibration.statusText"
-      [history]="vibration.history">
-    </app-sensor-card>
-  </section>
-
-  <app-motor-telemetry-chart
-    [rpmHistory]="rpm.history"
-    [tempHistory]="engineTemp.history"
-    [velocityHistory]="velocity.history"
-    [oilPressureHistory]="oilPressure.history"
-    [vibrationHistory]="vibration.history">
-  </app-motor-telemetry-chart>
-
-  <section class="alerts-panel">
-    <div class="alerts-head">
-      <span class="alerts-title">Alertas de status — motor e freios</span>
-      <span class="alerts-count">{{ alerts.length }} ativos</span>
-    </div>
-
-    <div class="alert-row" *ngFor="let alert of alerts">
-      <div class="alert-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.7 17.5A1.8 1.8 0 0 0 4.3 20h15.4a1.8 1.8 0 0 0 1.6-2.5L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
+      <div class="alert-row" *ngFor="let alert of alerts">
+        <div class="alert-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 2.7 17.5A1.8 1.8 0 0 0 4.3 20h15.4a1.8 1.8 0 0 0 1.6-2.5L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
+        </div>
+        <div class="alert-body">
+          <div class="alert-title">{{ alert.title }}</div>
+          <div class="alert-meta">{{ alert.meta }}</div>
+        </div>
+        <div class="alert-time">{{ alert.time }}</div>
       </div>
-      <div class="alert-body">
-        <div class="alert-title">{{ alert.title }}</div>
-        <div class="alert-meta">{{ alert.meta }}</div>
-      </div>
-      <div class="alert-time">{{ alert.time }}</div>
-    </div>
-  </section>
+    </app-panel>
 
+  </div>
 </main>
