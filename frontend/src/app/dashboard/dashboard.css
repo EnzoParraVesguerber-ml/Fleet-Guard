@@ -9,6 +9,7 @@
   display:flex;
   flex-direction:column;
   gap:20px;
+  min-width:0;
 }
 
 .page-title-row{
@@ -36,42 +37,46 @@
   background: var(--status-ok);
 }
 
-.sensor-grid{
+/* ---------- grid principal (12 colunas) ---------- */
+.dashboard-grid{
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
-  align-items: stretch;   /* todos os cards da mesma linha com a mesma altura */
+  align-items: stretch;
 }
 
-@media (max-width: 1100px){
-  .sensor-grid{ grid-template-columns: repeat(2, 1fr); }
-}
+.dashboard-grid > *{ min-width:0; }
 
-@media (max-width: 640px){
-  .sensor-grid{ grid-template-columns: 1fr; }
-}
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; }
+.span-12{ grid-column: span 12; }
 
-/* ---------- alerts panel ---------- */
-.alerts-panel{
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 4px 0;
-}
-
-.alerts-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding: 14px 20px 12px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.alerts-title{
-  font-size:13.5px;
+.group-label{
+  font-size:11px;
   font-weight:600;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color: var(--text-faint);
+  margin-top: 8px;
+  margin-bottom: -4px;
 }
 
+/* notebook / tela média: predição em linha cheia, status e cards do motor em 2 colunas
+   (os 3 cards de freio continuam 3 por linha) */
+@media (max-width: 1280px){
+  app-sensor-card.span-3{ grid-column: span 6; }
+  app-prediction-panel.span-4{ grid-column: span 12; }
+  app-status-panel.span-4{ grid-column: span 6; }
+}
+
+/* tablet / celular: tudo em 1 coluna */
+@media (max-width: 860px){
+  .main{ padding: 18px 16px 24px 16px; }
+  .dashboard-grid > *{ grid-column: span 12 !important; }
+}
+
+/* ---------- alertas (conteúdo projetado dentro de <app-panel>) ---------- */
 .alerts-count{
   font-size:11px;
   font-family:'JetBrains Mono', monospace;
@@ -79,6 +84,7 @@
   background: var(--status-warn-dim);
   padding: 2px 8px;
   border-radius: 20px;
+  flex-shrink:0;
 }
 
 .alert-row{
@@ -114,4 +120,3 @@
   color: var(--text-faint);
   flex-shrink:0;
 }
-
