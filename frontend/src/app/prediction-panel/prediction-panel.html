@@ -1,0 +1,27 @@
+<app-panel heading="Predição de falha"
+           [subtitle]="prediction ? prediction.model : 'Modelo de classificação'"
+           [placeholder]="prediction ? '' : 'Aguardando integração com o modelo'">
+  <span panel-actions class="updated" *ngIf="prediction">{{ prediction.updatedAt }}</span>
+
+  <ng-container *ngIf="prediction">
+    <div class="pred-label" [ngClass]="'txt-' + status">{{ prediction.label }}</div>
+
+    <div class="pred-prob-row">
+      <span class="pred-prob-caption">Probabilidade de falha</span>
+      <span class="pred-prob-value" [ngClass]="'txt-' + status">{{ percent }}%</span>
+    </div>
+
+    <div class="bar" role="meter" [attr.aria-valuenow]="percent" aria-valuemin="0" aria-valuemax="100">
+      <div class="bar-fill" [ngClass]="'fill-' + status" [style.width.%]="percent"></div>
+      <span class="bar-mark" [style.left.%]="warnAt * 100"></span>
+      <span class="bar-mark" [style.left.%]="critAt * 100"></span>
+    </div>
+
+    <div class="bar-scale">
+      <span>0</span>
+      <span>atenção {{ warnAt * 100 }}%</span>
+      <span>crítico {{ critAt * 100 }}%</span>
+      <span>100</span>
+    </div>
+  </ng-container>
+</app-panel>

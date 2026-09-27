@@ -1,0 +1,12 @@
+<app-panel [heading]="heading" [subtitle]="subtitle" [flush]="true"
+           [placeholder]="items.length ? '' : 'Sem dados de status'">
+  <span panel-actions class="pill" [ngClass]="'pill-' + overall">{{ overallLabel }}</span>
+
+  <ul class="status-list">
+    <li class="status-row" *ngFor="let item of items">
+      <span class="status-dot" [ngClass]="'dot-' + item.status"></span>
+      <span class="status-label">{{ item.label }}</span>
+      <span class="status-detail" [ngClass]="'txt-' + item.status">{{ item.detail }}</span>
+    </li>
+  </ul>
+</app-panel>

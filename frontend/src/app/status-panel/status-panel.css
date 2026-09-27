@@ -1,0 +1,42 @@
+:host{ display:block; min-width:0; }
+
+app-panel{ height:100%; }
+
+.pill{
+  font-size:11px;
+  font-weight:600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  flex-shrink:0;
+}
+.pill-ok{   color: var(--status-ok);   background: var(--status-ok-dim); }
+.pill-warn{ color: var(--status-warn); background: var(--status-warn-dim); }
+.pill-crit{ color: var(--status-crit); background: var(--status-crit-dim); }
+
+.status-list{ list-style:none; }
+
+.status-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size:12.5px;
+}
+.status-row:last-child{ border-bottom:none; }
+
+.status-dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.dot-ok{   background: var(--status-ok); }
+.dot-warn{ background: var(--status-warn); box-shadow: 0 0 0 3px var(--status-warn-dim); }
+.dot-crit{ background: var(--status-crit); box-shadow: 0 0 0 3px var(--status-crit-dim); }
+
+.status-label{ flex:1; color: var(--text); min-width:0; }
+
+.status-detail{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11.5px;
+  text-align:right;
+}
+.txt-ok{   color: var(--text-faint); }
+.txt-warn{ color: var(--status-warn); }
+.txt-crit{ color: var(--status-crit); }
