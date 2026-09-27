@@ -10,9 +10,6 @@
     <div class="fleet-status">
       <span class="dot ok"></span>
       {{ fleetOnline }} de {{ fleetTotal }} veículos operando normalmente
-      <span *ngIf="alertCount > 0" class="alert-inline">
-        · {{ alertCount }} em alerta
-      </span>
     </div>
   </div>
   <div class="header-right">
