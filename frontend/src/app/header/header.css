@@ -82,6 +82,3 @@
   justify-content:center;
   border: 2px solid var(--bg);
 }
-
-
-.alert-inline { color: var(--status-warn); font-weight: 600; }
