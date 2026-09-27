@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Status } from '../models/telemetry';
 
 @Component({
   selector: 'app-sensor-card',
@@ -16,12 +17,13 @@ export class SensorCard implements OnChanges {
   /** Valor atual formatado, ex: "104" */
   @Input() value = '';
   /** Status do sensor: controla cor do card e da linha do gráfico */
-  @Input() status: 'ok' | 'warn' | 'crit' = 'ok';
+  @Input() status: Status = 'ok';
   /** Texto da linha de status abaixo do valor */
   @Input() statusText = '';
   /** Histórico de leituras (mais antiga -> mais recente) usado para desenhar o gráfico */
   @Input() history: number[] = [];
 
+  // dimensões internas do viewBox do SVG
   private readonly width = 280;
   private readonly height = 64;
   private readonly padY = 6;
@@ -56,6 +58,7 @@ export class SensorCard implements OnChanges {
 
     this.linePoints = coords.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
+    // fecha o polígono embaixo pra virar área preenchida
     this.areaPoints =
       `0,${this.height} ` + this.linePoints + ` ${this.width},${this.height}`;
 
