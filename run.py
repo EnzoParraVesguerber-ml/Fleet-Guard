@@ -1,4 +1,5 @@
 from flask import request, jsonify
+from backend.backend_api.simulation_manager import sim_manager
 import pandas as pd
 import joblib
 
@@ -150,6 +151,87 @@ def resumo_frota():
         "com_dados": len(ultimas)
     })
     
+    
+# ─── Lista de veículos disponíveis ─────────────────────────────
+@app.route('/api/veiculos', methods=['GET'])
+def listar_veiculos():
+    """
+    Retorna veículos com tipo de falha detectado a partir do dataset (CSV).
+    tipo_falha ∈ { normal, motor, freio, rolamento }
+    """
+    from backend.backend_api.simulation_manager import _load_dataset
+    df = _load_dataset()
+
+    # Detecta tipo de falha por veículo olhando o comportamento
+    info_falha = {}
+    if 'target' in df.columns:
+        for vid, g in df.groupby('veiculo_id'):
+            em_alerta = g[g['target'] != "Operação Normal"]
+            if em_alerta.empty:
+                info_falha[int(vid)] = 'normal'
+                continue
+
+            # Olha as últimas ~150 amostras em alerta pra caracterizar
+            ult = em_alerta.tail(150)
+            temp_alta = ult['temp_motor_spn110'].mean() > 100
+            vib_alta  = ult['vibracao_freio'].mean() > 0.30
+            cubo_alto = ult['temp_cubo_roda_ir'].mean() > 55
+
+            if temp_alta and not vib_alta and not cubo_alto:
+                info_falha[int(vid)] = 'motor'
+            elif vib_alta and not cubo_alto:
+                info_falha[int(vid)] = 'rolamento'
+            elif cubo_alto:
+                info_falha[int(vid)] = 'freio'
+            else:
+                info_falha[int(vid)] = 'motor'  # fallback
+
+    veiculos = Veiculo.query.order_by(Veiculo.id).all()
+    resultado = []
+    for v in veiculos:
+        ultima = (Telemetria.query
+                  .filter_by(veiculo_id=v.id)
+                  .order_by(Telemetria.id.desc())
+                  .first())
+        resultado.append({
+            "id": v.id,
+            "ativo": v.ativo,
+            "ultimo_alerta": ultima.target if ultima else None,
+            "tipo_falha": info_falha.get(v.id, 'normal'),
+        })
+    return jsonify(resultado)
+
+
+# ─── Controle da simulação ─────────────────────────────────────
+@app.route('/api/simulacao/iniciar', methods=['POST'])
+def iniciar_simulacao():
+    dados = request.json or {}
+    veiculo_id = dados.get('veiculo_id')
+    intervalo  = dados.get('intervalo_s', 1.0)
+    inicio_pct = dados.get('inicio_pct')  # opcional: 0.0–1.0
+
+    if veiculo_id is None:
+        return jsonify({"erro": "veiculo_id obrigatório"}), 400
+
+    ok, erro = sim_manager.start(
+        veiculo_id=int(veiculo_id),
+        intervalo_s=float(intervalo),
+        inicio_pct=inicio_pct,
+    )
+    if not ok:
+        return jsonify({"erro": erro}), 400
+    return jsonify({"status": "iniciado", "veiculo_id": veiculo_id})
+
+
+@app.route('/api/simulacao/parar', methods=['POST'])
+def parar_simulacao():
+    sim_manager.stop()
+    return jsonify({"status": "parado"})
+
+
+@app.route('/api/simulacao/status', methods=['GET'])
+def status_simulacao():
+    return jsonify(sim_manager.status())
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
