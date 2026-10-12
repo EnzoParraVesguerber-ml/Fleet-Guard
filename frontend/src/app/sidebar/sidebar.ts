@@ -6,12 +6,12 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './sidebar.html',
-  styleUrl: './sidebar.css'
+  styleUrl: './sidebar.css',
 })
 export class Sidebar {
   navItems = [
     { label: 'Dashboard', active: true },
     { label: 'Veículos', active: false },
-    { label: 'Histórico', active: false }
+    { label: 'Alertas', active: false },
   ];
 }
