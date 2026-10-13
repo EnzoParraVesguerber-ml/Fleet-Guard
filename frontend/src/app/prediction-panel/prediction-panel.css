@@ -69,3 +69,44 @@ app-panel{ height:100%; }
 .fill-ok{   background: var(--status-ok); }
 .fill-warn{ background: var(--status-warn); }
 .fill-crit{ background: var(--status-crit); }
+
+
+/* ── Linha do tipo de falha ────────────────────────── */
+.pred-type{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+
+  margin: -8px 0 18px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+
+  background: var(--panel-raised);
+  border: 1px solid var(--border);
+}
+
+.pred-type-caption{
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.pred-type-value{
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cor da borda/texto segue o status do alerta */
+.pred-type.type-ok   { border-color: var(--status-ok-dim); }
+.pred-type.type-ok   .pred-type-value{ color: var(--status-ok); }
+.pred-type.type-warn { border-color: var(--status-warn-dim); }
+.pred-type.type-warn .pred-type-value{ color: var(--status-warn); }
+.pred-type.type-crit { border-color: var(--status-crit-dim); }
+.pred-type.type-crit .pred-type-value{ color: var(--status-crit); }

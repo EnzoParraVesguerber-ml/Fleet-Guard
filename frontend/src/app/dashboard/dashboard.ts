@@ -151,6 +151,10 @@ export class Dashboard implements OnDestroy {
     const vibStatus: 'ok' | 'warn' | 'crit' =
       vibracao >= 1.0 ? 'crit' : vibracao >= 0.5 ? 'warn' : 'ok';
 
+    const tipoFalhaTexto = this.state.tipoFalhaAtual() !== 'normal'
+      ? this.state.tipoFalhaDescricao()
+      : 'Falha não classificada';
+
     const snap = this.hist();
 
     this.engineSensors.set([
@@ -185,6 +189,7 @@ export class Dashboard implements OnDestroy {
       failureProbability: l.prob_falha ?? (alertaAtivo ? 0.5 : 0.5),
       model: 'Random Forest · janela de 30 leituras',
       updatedAt: 'agora',
+      failureType: alertaAtivo ? tipoFalhaTexto : undefined,   // ← NOVO
     });
 
     this.motorStatus.set([
@@ -203,7 +208,7 @@ export class Dashboard implements OnDestroy {
     if (alertaAtivo) {
       this.alerts.set([{
         title: `Alerta preditivo — Ônibus ${this.veiculoLabel()}`,
-        meta:  'Modelo identificou padrão de falha iminente',
+        meta:  `${tipoFalhaTexto} — padrão de falha iminente`,   // ← NOVO
         time:  'agora',
       }]);
     } else {
