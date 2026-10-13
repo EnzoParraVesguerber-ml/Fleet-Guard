@@ -29,6 +29,8 @@ export interface Prediction {
   failureProbability: number;
   model: string;
   updatedAt: string;
+  /** Descrição do tipo de falha (ex.: "Superaquecimento do motor") */
+  failureType?: string;   // ← NOVO
 }
 
 export const STATUS_WEIGHT: Record<Status, number> = { ok: 0, warn: 1, crit: 2 };

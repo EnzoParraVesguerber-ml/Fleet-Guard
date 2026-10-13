@@ -72,11 +72,12 @@ export class Header implements OnInit, OnDestroy {
     const anterior = this.state.veiculoSelecionado();
     if (id === anterior) return;
 
-    const estavaSimulando = this.state.simulacaoAtiva();
-    this.state.selecionar(id);
+    // Descobre o tipo de falha do veículo recém-escolhido (já temos a lista em memória)
+    const v = this.veiculos().find(x => x.id === id);
+    this.state.selecionar(id, v?.tipo_falha ?? 'normal');   // ← passa o tipo
 
-    // Se estava simulando, reinicia automaticamente no novo veículo.
-    // O SimulationManager já mata a thread anterior sozinho (start() chama stop()).
+    const estavaSimulando = this.state.simulacaoAtiva();
+
     if (estavaSimulando) {
       this.api.iniciarSimulacao(id, this.intervalo()).subscribe({
         next: () => this.state.simulacaoAtiva.set(true),
@@ -93,7 +94,7 @@ export class Header implements OnInit, OnDestroy {
       next: (vs) => {
         this.veiculos.set(vs);
         if (vs.length && this.state.veiculoSelecionado() == null) {
-          this.state.selecionar(vs[0].id);
+          this.state.selecionar(vs[0].id, vs[0].tipo_falha);   // ← passa o tipo
         }
       },
     });

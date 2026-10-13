@@ -6,6 +6,12 @@
   <ng-container *ngIf="prediction">
     <div class="pred-label" [ngClass]="'txt-' + status">{{ prediction.label }}</div>
 
+    <!-- ── Tipo de falha (só aparece em alerta) ── -->
+    <div class="pred-type" *ngIf="prediction.failureType" [ngClass]="'type-' + status">
+      <span class="pred-type-caption">Tipo de falha</span>
+      <span class="pred-type-value">{{ prediction.failureType }}</span>
+    </div>
+
     <div class="pred-prob-row">
       <span class="pred-prob-caption">Probabilidade de falha</span>
       <span class="pred-prob-value" [ngClass]="'txt-' + status">{{ percent }}%</span>
