@@ -11,6 +11,8 @@ export interface TelemetriaAtual {
   vibracao: number;
   velocidade_kmh_spn84: number;
   alerta_preditivo: string;
+  timestamp: number;
+  prob_falha: number | null;   // ← NOVO
 }
 
 export interface ResumoFrota {
