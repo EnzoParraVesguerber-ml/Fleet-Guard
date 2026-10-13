@@ -67,8 +67,25 @@ export class Header implements OnInit, OnDestroy {
   }
 
   selecionar(id: number) {
-    this.state.selecionar(id);
     this.dropdownAberto.set(false);
+
+    const anterior = this.state.veiculoSelecionado();
+    if (id === anterior) return;
+
+    const estavaSimulando = this.state.simulacaoAtiva();
+    this.state.selecionar(id);
+
+    // Se estava simulando, reinicia automaticamente no novo veículo.
+    // O SimulationManager já mata a thread anterior sozinho (start() chama stop()).
+    if (estavaSimulando) {
+      this.api.iniciarSimulacao(id, this.intervalo()).subscribe({
+        next: () => this.state.simulacaoAtiva.set(true),
+        error: (e) => {
+          console.error('Erro ao reiniciar simulação:', e);
+          this.state.simulacaoAtiva.set(false);
+        },
+      });
+    }
   }
 
   private carregarVeiculos() {

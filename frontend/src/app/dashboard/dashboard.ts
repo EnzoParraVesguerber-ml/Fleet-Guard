@@ -52,6 +52,8 @@ export class Dashboard implements OnDestroy {
   });
 
   private pollId: any = null;
+  private ultimoTsVisto: number | null = null;      // NOVO
+  private primeiraLeituraIgnorada = false;          // NOVO
 
   constructor() {
     effect(() => {
@@ -66,8 +68,11 @@ export class Dashboard implements OnDestroy {
 
   private reiniciarPolling(veiculoId: number) {
     this.pararPolling();
-    this.limparHistorico();
+    this.limparTudo();                    // ← era limparHistorico()
+    this.ultimoTsVisto = null;            // NOVO
+    this.primeiraLeituraIgnorada = false; // NOVO
     this.carregando.set(true);
+    this.erro.set(null);                  // NOVO
     this.buscar(veiculoId);
     this.pollId = setInterval(() => this.buscar(veiculoId), POLL_MS);
   }
@@ -76,8 +81,14 @@ export class Dashboard implements OnDestroy {
     if (this.pollId) { clearInterval(this.pollId); this.pollId = null; }
   }
 
-  private limparHistorico() {
+  private limparTudo() {
     this.hist.set({ rpm: [], temp: [], velocidade: [], pressao: [], vibracao: [] });
+    this.engineSensors.set([]);
+    this.brakeSensors.set([]);
+    this.prediction.set(null);
+    this.motorStatus.set([]);
+    this.brakeStatus.set([]);
+    this.alerts.set([]);
   }
 
   private buscar(veiculoId: number) {
@@ -85,13 +96,30 @@ export class Dashboard implements OnDestroy {
       next: (l) => {
         this.carregando.set(false);
         this.erro.set(null);
+
+        // 1ª leitura após troca = resquício histórico do DB → só registra o ts e ignora
+        if (!this.primeiraLeituraIgnorada) {
+          this.ultimoTsVisto = l.timestamp;
+          this.primeiraLeituraIgnorada = true;
+          return;
+        }
+
+        // Ainda é o mesmo registro antigo do DB? Ignora silenciosamente.
+        if (l.timestamp === this.ultimoTsVisto) return;
+
+        // Dado realmente novo → aplica
+        this.ultimoTsVisto = l.timestamp;
         this.aplicarLeitura(l);
       },
       error: (e) => {
         this.carregando.set(false);
-        this.erro.set(e.status === 404
-          ? 'Sem telemetria ainda. Clique em ▶ Simular na sidebar.'
-          : 'Erro ao buscar telemetria da API.');
+        if (e.status === 404) {
+          // Sem dado antigo no DB → não precisa descartar a 1ª leitura válida
+          this.primeiraLeituraIgnorada = true;
+          this.erro.set('Sem telemetria ainda. Clique em ▶ Simular no header.');
+        } else {
+          this.erro.set('Erro ao buscar telemetria da API.');
+        }
       },
     });
   }
@@ -154,7 +182,7 @@ export class Dashboard implements OnDestroy {
 
     this.prediction.set({
       label: l.alerta_preditivo ?? '—',
-      failureProbability: alertaAtivo ? 0.85 : 0.15,
+      failureProbability: l.prob_falha ?? (alertaAtivo ? 0.5 : 0.5),
       model: 'Random Forest · janela de 30 leituras',
       updatedAt: 'agora',
     });

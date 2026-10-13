@@ -16,6 +16,8 @@ modelo = joblib.load('backend/backend_api/ml_pipeline/fleetguard_model.joblib')
 scaler = joblib.load('backend/backend_api/ml_pipeline/fleetguard_scaler.joblib')
 frota_buffer = {}
 
+frota_prob = {}
+
 @app.route('/api/telemetria', methods=['POST'])
 def receber_telemetria():
     dados = request.json
@@ -60,6 +62,13 @@ def receber_telemetria():
 
     X_scaled = scaler.transform(X_inferencia)
     predicao = modelo.predict(X_scaled)[0]
+
+    # Pega a probabilidade da classe "Alerta: Falha Iminente"
+    proba = modelo.predict_proba(X_scaled)[0]
+    classes = list(modelo.classes_)
+    idx_falha = classes.index("Alerta: Falha Iminente")   # ajuste se seu label for diferente
+    prob_falha = float(proba[idx_falha])
+    frota_prob[vid] = prob_falha
     
     # --- C. Persistência no Banco de Dados (NOVO) ---
     # Verifica se o veículo existe para não dar erro de ForeignKey
@@ -93,6 +102,7 @@ def receber_telemetria():
     return jsonify({
         "veiculo_id": vid,
         "alerta_preditivo": predicao,
+        "prob_falha": prob_falha,               # ← NOVO (0.0 a 1.0)
         "leituras_no_buffer": len(frota_buffer[vid])
     })
 
@@ -110,8 +120,10 @@ def obter_telemetria_atual(veiculo_id):
         "rpm": ultima_leitura.rpm_spn190,
         "pressao_oleo": ultima_leitura.pressao_oleo_spn100,
         "vibracao": ultima_leitura.vibracao_freio,
-        "velocidade_kmh_spn84": ultima_leitura.velocidade_kmh_spn84,   # ← NOVA LINHA
-        "alerta_preditivo": ultima_leitura.target
+        "velocidade_kmh_spn84": ultima_leitura.velocidade_kmh_spn84,
+        "alerta_preditivo": ultima_leitura.target,
+        "timestamp": ultima_leitura.timestamp,
+        "prob_falha": frota_prob.get(veiculo_id),   # ← NOVO (pode ser None na 1ª vez)
     })
     
 @app.route('/api/veiculos/resumo', methods=['GET'])
