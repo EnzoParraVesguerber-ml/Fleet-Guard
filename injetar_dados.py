@@ -1,14 +1,16 @@
 import argparse
+from pathlib import Path
 import time
 import requests
 import numpy as np
 import pandas as pd
 
-from backend.database.models import db, Veiculo
+from backend.database.models import db, Veiculo, Telemetria
 from backend.backend_api.app import create_app
 
 
-CSV_PATH = 'backend/edge_simulation/data/fleetguard_dataset_mock.csv'
+# [INTEGRAÇÃO - BANCO] Caminho relativo ao próprio script, independente da pasta do terminal.
+CSV_PATH = Path(__file__).resolve().parent / 'backend/edge_simulation/data/fleetguard_dataset_mock.csv'
 API_URL = 'http://127.0.0.1:5000/api/telemetria'
 VEICULO_SIMULADO = 0
 
@@ -24,14 +26,19 @@ def _to_native(d: dict) -> dict:
     return out
 
 
-def carregar_banco():
+def carregar_banco(recriar=False):
     print("1. Lendo o CSV...")
     df = pd.read_csv(CSV_PATH)
 
     app = create_app()
     with app.app_context():
-        print("2. Recriando tabelas...")
-        db.drop_all()
+        # [INTEGRAÇÃO - BANCO] Antes a carga apagava as tabelas automaticamente.
+        # Agora preserva dados existentes; apagar e recarregar exige --recriar explícito.
+        if not recriar and (Veiculo.query.first() or Telemetria.query.first()):
+            raise SystemExit('Banco já contém dados. Carga cancelada. Use --recriar somente se quiser apagar e substituir os dados.')
+        if recriar:
+            print("2. Apagando e recriando tabelas...")
+            db.drop_all()
         db.create_all()
 
         print("3. Cadastrando veículos únicos...")
@@ -69,15 +76,18 @@ def simular_ao_vivo():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    # [INTEGRAÇÃO - BANCO] O padrão passou de completo para carregar:
+    # popular o banco não inicia uma simulação nem exige que o Flask esteja rodando.
     parser.add_argument(
         '--modo',
         choices=['carregar', 'simular', 'completo'],
-        default='completo',
+        default='carregar',
         help="carregar=só popula o banco | simular=só roda a simulação | completo=ambos"
     )
+    parser.add_argument('--recriar', action='store_true', help='Apaga os dados existentes antes da carga histórica')
     args = parser.parse_args()
 
     if args.modo in ('carregar', 'completo'):
-        carregar_banco()
+        carregar_banco(recriar=args.recriar)
     if args.modo in ('simular', 'completo'):
         simular_ao_vivo()
