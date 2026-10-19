@@ -1,4 +1,5 @@
 import os
+import argparse
 import sys
 import pandas as pd
 import joblib
@@ -11,11 +12,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 from sklearn.utils.class_weight import compute_sample_weight
 
-# Garante que o script enxergue as configurações do banco de dados na pasta backend_api
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from backend_api.app.config import Config
+# [INTEGRAÇÃO - APOIO] Corrige ModuleNotFoundError: backend na execução direta.
+# Adiciona a raiz ao caminho de importação e usa o mesmo pacote da API.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+from backend.backend_api.app.config import Config
 
-def treinar_modelos():
+def treinar_modelos(rapido=False):
     # 1. Carregamento de Dados
     print("1. Conectando ao banco PostgreSQL e extraindo dados...")
     engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
@@ -45,6 +47,13 @@ def treinar_modelos():
     
     df_train = df.iloc[train_idx].copy()
     df_test = df.iloc[test_idx].copy()
+
+    # [INTEGRAÇÃO - APOIO] Novo --rapido para demonstração local: limita as amostras
+    # após separar os veículos de treino/teste. Sem a flag, mantém o treinamento completo.
+    if rapido:
+        df_train = df_train.sample(n=min(20000, len(df_train)), random_state=42)
+        df_test = df_test.sample(n=min(10000, len(df_test)), random_state=42)
+        print('Modo rápido: amostra de treino e busca reduzida; não substitui a avaliação completa.')
 
     # d. Calcular pesos para a classe minoritária (Falha Iminente) no treino
     pesos_treino = compute_sample_weight(class_weight='balanced', y=df_train['target'])
@@ -89,6 +98,15 @@ def treinar_modelos():
     }
 
     melhor_modelo_nome = ""
+    if rapido:
+        # [INTEGRAÇÃO - APOIO] Reduz árvores e busca de parâmetros só no modo rápido.
+        modelos = {
+            'Random Forest (teste local)': {
+                'model': RandomForestClassifier(random_state=42, n_jobs=2, class_weight='balanced'),
+                'params': {'n_estimators': [50], 'max_depth': [12], 'min_samples_split': [2]},
+                'usa_peso_externo': False,
+            }
+        }
     melhor_modelo_obj = None
     melhor_f1 = 0.0
 
@@ -100,10 +118,10 @@ def treinar_modelos():
         search = RandomizedSearchCV(
             config["model"], 
             param_distributions=config["params"], 
-            n_iter=20, 
-            cv=3, 
+            n_iter=1 if rapido else 20,
+            cv=2 if rapido else 3,
             scoring='f1_macro', 
-            n_jobs=-1, 
+            n_jobs=2 if rapido else -1,
             random_state=42
         )
         
@@ -148,4 +166,6 @@ def treinar_modelos():
     print(f"   - {caminho_scaler}")
 
 if __name__ == '__main__':
-    treinar_modelos()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rapido', action='store_true', help='Treino reduzido para testar a aplicação localmente')
+    treinar_modelos(rapido=parser.parse_args().rapido)
