@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+// [INTEGRAÇÃO - ITEM 3] URL local do Flask já existente, mantida nesta integração.
 const API = 'http://127.0.0.1:5000/api';
 
 export interface TelemetriaAtual {
@@ -37,6 +38,8 @@ export interface Veiculo {
   tipo_falha: 'normal' | 'motor' | 'freio' | 'rolamento';
 }
 
+// [INTEGRAÇÃO - ITEM 2] Arquivo renomeado de telemetria.ts para telemetria.service.ts.
+// As consultas GET foram mantidas aqui; os comandos POST foram movidos para SimulacaoService.
 @Injectable({ providedIn: 'root' })
 export class TelemetriaService {
   private http = inject(HttpClient);
@@ -46,22 +49,13 @@ export class TelemetriaService {
   }
 
   telemetriaAtual(veiculoId: number): Observable<TelemetriaAtual> {
+    // [INTEGRAÇÃO - ITEM 3] Rota GET existente para a última leitura de um veículo.
+    // /api/telemetria, sem /atual/<id>, é a rota POST de recebimento de dados.
     return this.http.get<TelemetriaAtual>(`${API}/telemetria/atual/${veiculoId}`);
   }
 
   resumoFrota(): Observable<ResumoFrota> {
     return this.http.get<ResumoFrota>(`${API}/veiculos/resumo`);
-  }
-
-  iniciarSimulacao(veiculoId: number, intervalo_s = 1.0): Observable<any> {
-    return this.http.post(`${API}/simulacao/iniciar`, {
-      veiculo_id: veiculoId,
-      intervalo_s,
-    });
-  }
-
-  pararSimulacao(): Observable<any> {
-    return this.http.post(`${API}/simulacao/parar`, {});
   }
 
   statusSimulacao(): Observable<StatusSimulacao> {
