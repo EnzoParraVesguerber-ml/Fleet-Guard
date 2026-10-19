@@ -8,7 +8,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(), // HABILITA REQUISIÇÕES PARA O FLASK
+    // [INTEGRAÇÃO - ITEM 1] Configuração já existente, mantida: no Angular standalone,
+    // provideHttpClient() habilita HTTP no lugar de HttpClientModule em app.module.ts.
+    provideHttpClient(),
     provideCharts(withDefaultRegisterables())
   ]
 };
