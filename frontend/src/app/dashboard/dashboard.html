@@ -16,6 +16,22 @@
 
   <div class="dashboard-grid">
 
+    <!-- [INTEGRAÇÃO - ITEM 5] Novo painel: exibe os valores brutos com interpolação
+         {{ }} e a resposta completa com o pipe json. "dados" é o JSON salvo no item 4. -->
+    <app-panel class="span-12" heading="Dados recebidos da API">
+      @if (dadosTelemetria(); as dados) {
+        <p>Temperatura do motor: {{ dados.temp_motor }} °C</p>
+        <p>Rotação: {{ dados.rpm }} rpm</p>
+        <p>Pressão do óleo: {{ dados.pressao_oleo }} kPa</p>
+        <p>Vibração: {{ dados.vibracao }}</p>
+        <p>Velocidade: {{ dados.velocidade_kmh_spn84 }} km/h</p>
+        <p>Alerta: {{ dados.alerta_preditivo }}</p>
+        <pre style="white-space: pre-wrap; overflow-wrap: anywhere">{{ dados | json }}</pre>
+      } @else {
+        <p>{{ erro() || 'Aguardando leitura de um veículo.' }}</p>
+      }
+    </app-panel>
+
     <app-prediction-panel class="span-4" [prediction]="prediction()"></app-prediction-panel>
 
     <app-status-panel class="span-4"

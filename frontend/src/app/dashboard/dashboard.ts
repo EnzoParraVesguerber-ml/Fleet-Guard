@@ -1,6 +1,7 @@
-import { Component, inject, OnDestroy, effect, signal, computed } from '@angular/core';
+import { Component, inject, OnDestroy, effect, signal, computed, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TelemetriaService, TelemetriaAtual } from '../services/telemetria';
+import { TelemetriaService, TelemetriaAtual } from '../services/telemetria.service';
+import { Subscription } from 'rxjs';
 import { FrotaState } from '../services/frota-state';
 import { SensorCard } from '../sensor-card/sensor-card';
 import { Panel } from '../panel/panel';
@@ -37,6 +38,9 @@ export class Dashboard implements OnDestroy {
   alerts        = signal<Alert[]>([]);
   carregando    = signal(false);
   erro          = signal<string | null>(null);
+  // [INTEGRAÇÃO - ITEM 4] Guarda o JSON recebido sem formatar os valores.
+  // O signal notifica a tela quando uma resposta chega; null indica ausência de leitura.
+  dadosTelemetria = signal<TelemetriaAtual | null>(null);
 
   hist = signal({
     rpm:        [] as number[],
@@ -53,12 +57,15 @@ export class Dashboard implements OnDestroy {
 
   private pollId: any = null;
   private ultimoTsVisto: number | null = null;      // NOVO
-  private primeiraLeituraIgnorada = false;          // NOVO
+  // [INTEGRAÇÃO - APOIO] Agrupa as consultas para cancelá-las ao trocar de veículo ou sair.
+  private requisicoes = new Subscription();
 
   constructor() {
     effect(() => {
       const id = this.state.veiculoSelecionado();
-      if (id != null) this.reiniciarPolling(id);
+      // [INTEGRAÇÃO - APOIO] Só a seleção deve reiniciar as consultas periódicas.
+      // untracked evita que leituras de outros signals dentro da rotina virem dependências.
+      if (id != null) untracked(() => this.reiniciarPolling(id));
     });
   }
 
@@ -70,7 +77,6 @@ export class Dashboard implements OnDestroy {
     this.pararPolling();
     this.limparTudo();                    // ← era limparHistorico()
     this.ultimoTsVisto = null;            // NOVO
-    this.primeiraLeituraIgnorada = false; // NOVO
     this.carregando.set(true);
     this.erro.set(null);                  // NOVO
     this.buscar(veiculoId);
@@ -79,9 +85,14 @@ export class Dashboard implements OnDestroy {
 
   private pararPolling() {
     if (this.pollId) { clearInterval(this.pollId); this.pollId = null; }
+    // [INTEGRAÇÃO - APOIO] Impede respostas pendentes de atualizarem o veículo errado.
+    this.requisicoes.unsubscribe();
+    this.requisicoes = new Subscription();
   }
 
   private limparTudo() {
+    // [INTEGRAÇÃO - ITEM 4] Remove o JSON do veículo anterior durante a troca.
+    this.dadosTelemetria.set(null);
     this.hist.set({ rpm: [], temp: [], velocidade: [], pressao: [], vibracao: [] });
     this.engineSensors.set([]);
     this.brakeSensors.set([]);
@@ -92,19 +103,16 @@ export class Dashboard implements OnDestroy {
   }
 
   private buscar(veiculoId: number) {
-    this.api.telemetriaAtual(veiculoId).subscribe({
+    this.requisicoes.add(this.api.telemetriaAtual(veiculoId).subscribe({
       next: (l) => {
         this.carregando.set(false);
         this.erro.set(null);
 
-        // 1ª leitura após troca = resquício histórico do DB → só registra o ts e ignora
-        if (!this.primeiraLeituraIgnorada) {
-          this.ultimoTsVisto = l.timestamp;
-          this.primeiraLeituraIgnorada = true;
-          return;
-        }
+        // [INTEGRAÇÃO - ITEM 4] Armazena a resposta completa para a interpolação no HTML.
+        this.dadosTelemetria.set(l);
 
-        // Ainda é o mesmo registro antigo do DB? Ignora silenciosamente.
+        // [INTEGRAÇÃO - CORREÇÃO] A primeira leitura do banco não é mais descartada.
+        // O JSON acima sempre é atualizado; timestamps repetidos não duplicam o gráfico.
         if (l.timestamp === this.ultimoTsVisto) return;
 
         // Dado realmente novo → aplica
@@ -114,14 +122,12 @@ export class Dashboard implements OnDestroy {
       error: (e) => {
         this.carregando.set(false);
         if (e.status === 404) {
-          // Sem dado antigo no DB → não precisa descartar a 1ª leitura válida
-          this.primeiraLeituraIgnorada = true;
-          this.erro.set('Sem telemetria ainda. Clique em ▶ Simular no header.');
+          this.erro.set('Sem telemetria. Popule o banco ou clique em ▶ Simular.');
         } else {
           this.erro.set('Erro ao buscar telemetria da API.');
         }
       },
-    });
+    }));
   }
 
   private aplicarLeitura(l: TelemetriaAtual) {
