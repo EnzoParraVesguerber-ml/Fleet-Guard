@@ -4,7 +4,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FrotaState } from '../services/frota-state';
-import { TelemetriaService, Veiculo } from '../services/telemetria';
+import { TelemetriaService, Veiculo } from '../services/telemetria.service';
+import { SimulacaoService } from '../services/simulacao.service';
 
 @Component({
   selector: 'app-header',
@@ -16,6 +17,9 @@ import { TelemetriaService, Veiculo } from '../services/telemetria';
 export class Header implements OnInit, OnDestroy {
   protected readonly state = inject(FrotaState);
   private api = inject(TelemetriaService);
+  // [INTEGRAÇÃO - ITEM 2] Iniciar, reiniciar e parar agora usam o serviço de POST.
+  // As consultas de veículos, resumo e status continuam em TelemetriaService.
+  private simulacao = inject(SimulacaoService);
   private el  = inject(ElementRef);
 
   veiculos    = signal<Veiculo[]>([]);
@@ -79,7 +83,7 @@ export class Header implements OnInit, OnDestroy {
     const estavaSimulando = this.state.simulacaoAtiva();
 
     if (estavaSimulando) {
-      this.api.iniciarSimulacao(id, this.intervalo()).subscribe({
+      this.simulacao.iniciarSimulacao(id, this.intervalo()).subscribe({
         next: () => this.state.simulacaoAtiva.set(true),
         error: (e) => {
           console.error('Erro ao reiniciar simulação:', e);
@@ -121,14 +125,14 @@ export class Header implements OnInit, OnDestroy {
   onSimular() {
     const id = this.state.veiculoSelecionado();
     if (id == null) return;
-    this.api.iniciarSimulacao(id, this.intervalo()).subscribe({
+    this.simulacao.iniciarSimulacao(id, this.intervalo()).subscribe({
       next: () => this.state.simulacaoAtiva.set(true),
       error: (e) => console.error('Erro ao iniciar:', e),
     });
   }
 
   onParar() {
-    this.api.pararSimulacao().subscribe({
+    this.simulacao.pararSimulacao().subscribe({
       next: () => this.state.simulacaoAtiva.set(false),
     });
   }
