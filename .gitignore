@@ -10,6 +10,8 @@
 venv/
 env/
 .venv/
+# [INTEGRACAO - AMBIENTE] Exclui ferramentas locais, arquivos do PostgreSQL e logs.
+.local/
 
 # =========================
 # Python / Flask
