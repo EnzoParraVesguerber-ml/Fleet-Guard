@@ -16,22 +16,6 @@
 
   <div class="dashboard-grid">
 
-    <!-- [INTEGRAÇÃO - ITEM 5] Novo painel: exibe os valores brutos com interpolação
-         {{ }} e a resposta completa com o pipe json. "dados" é o JSON salvo no item 4. -->
-    <app-panel class="span-12" heading="Dados recebidos da API">
-      @if (dadosTelemetria(); as dados) {
-        <p>Temperatura do motor: {{ dados.temp_motor }} °C</p>
-        <p>Rotação: {{ dados.rpm }} rpm</p>
-        <p>Pressão do óleo: {{ dados.pressao_oleo }} kPa</p>
-        <p>Vibração: {{ dados.vibracao }}</p>
-        <p>Velocidade: {{ dados.velocidade_kmh_spn84 }} km/h</p>
-        <p>Alerta: {{ dados.alerta_preditivo }}</p>
-        <pre style="white-space: pre-wrap; overflow-wrap: anywhere">{{ dados | json }}</pre>
-      } @else {
-        <p>{{ erro() || 'Aguardando leitura de um veículo.' }}</p>
-      }
-    </app-panel>
-
     <app-prediction-panel class="span-4" [prediction]="prediction()"></app-prediction-panel>
 
     <app-status-panel class="span-4"
@@ -71,11 +55,11 @@
       [vibrationHistory]="hist().vibracao">
     </app-motor-telemetry-chart>
 
-    <app-panel class="span-12" heading="Alertas da frota"
-               subtitle="Motor e freios — todos os veículos" [flush]="true">
-      <span panel-actions class="alerts-count">{{ alerts().length }} ativos</span>
+    <app-panel class="span-12" heading="Histórico de alertas"
+               subtitle="Últimos alertas registrados deste veículo" [flush]="true">
+      <span panel-actions class="alerts-count">{{ alertHistory().length }} registros</span>
 
-      @for (alert of alerts(); track alert.title) {
+      @for (a of alertHistory(); track a.id) {
         <div class="alert-row">
           <div class="alert-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -84,14 +68,16 @@
             </svg>
           </div>
           <div class="alert-body">
-            <div class="alert-title">{{ alert.title }}</div>
-            <div class="alert-meta">{{ alert.meta }}</div>
+            <div class="alert-title">{{ tipoFalhaDescricao(a.tipo_falha) }}</div>
+            <div class="alert-meta">
+              {{ a.classe_prevista }} — probabilidade {{ formatarProb(a.probabilidade) }}%
+            </div>
           </div>
-          <div class="alert-time">{{ alert.time }}</div>
+          <div class="alert-time">{{ formatarHora(a.criado_em) }}</div>
         </div>
       } @empty {
         <div class="alert-row" style="justify-content:center; opacity:.6">
-          Sem alertas no momento.
+          Sem alertas registrados para este veículo.
         </div>
       }
     </app-panel>

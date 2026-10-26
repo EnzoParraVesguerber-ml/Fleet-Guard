@@ -33,3 +33,22 @@ class Telemetria(db.Model):
     tensao_bateria_v = db.Column(db.Float)
     codigo_erro_scanner = db.Column(db.String(50))
     target = db.Column(db.String(50))
+
+
+class Alerta(db.Model):
+    """
+    Histórico de alertas preditivos.
+    Uma linha é inserida apenas na TRANSIÇÃO normal -> alerta,
+    evitando gravar uma linha por segundo enquanto o veículo está em falha.
+    """
+    __tablename__ = 'alertas'
+
+    id = db.Column(db.Integer, primary_key=True)
+    veiculo_id = db.Column(db.Integer, db.ForeignKey('veiculos.id'), nullable=False, index=True)
+    timestamp = db.Column(db.Float, nullable=False)                # timestamp da leitura
+    classe_prevista = db.Column(db.String(50), nullable=False)     # texto do modelo
+    probabilidade = db.Column(db.Float, nullable=False)            # 0.0 a 1.0
+    tipo_falha = db.Column(db.String(30), nullable=False, default='desconhecido')
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    veiculo = db.relationship('Veiculo', backref=db.backref('alertas', lazy=True))

@@ -11,16 +11,17 @@ describe('Dashboard', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Dashboard],
-      // [INTEGRAÇÃO - TESTE] Resposta controlada para testar sem depender do Flask ou banco.
       providers: [{ provide: TelemetriaService, useValue: {
         telemetriaAtual: () => of({
           temp_motor: 89.5, rpm: 1500, pressao_oleo: 300, vibracao: 0.05,
           velocidade_kmh_spn84: 45.2, alerta_preditivo: 'Operação Normal',
           timestamp: 120.5, prob_falha: null,
         }),
+        listarAlertas: () => of([]),
       } }],
     }).overrideComponent(Dashboard, {
-      set: { imports: [], template: '{{ dadosTelemetria()?.temp_motor }}' },
+      // Mostra o valor do 1º card (temp) — o histórico do gráfico agora começa vazio.
+      set: { imports: [], template: '{{ engineSensors()[0]?.value }}' },
     }).compileComponents();
 
     fixture = TestBed.createComponent(Dashboard);
@@ -32,16 +33,20 @@ describe('Dashboard', () => {
     expect(component).toBeTruthy();
   });
 
-  // [INTEGRAÇÃO - TESTE] Regressão: verifica armazenamento, histórico e interpolação
-  // da primeira resposta, sem precisar iniciar a simulação.
-  it('exibe a primeira leitura do banco sem iniciar uma simulação', async () => {
+  it('primeira leitura popula os cards mas NÃO o histórico do gráfico', async () => {
     TestBed.inject(FrotaState).selecionar(0);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(component.dadosTelemetria()?.temp_motor).toBe(89.5);
-    expect(component.hist().temp).toEqual([89.5]);
+    // Cards mostram o valor histórico…
+    expect(component.engineSensors().length).toBeGreaterThan(0);
+    expect(component.engineSensors()[0].value).toBe('89.5');
     expect(fixture.nativeElement.textContent).toContain('89.5');
+
+    // …mas o histórico do gráfico começa vazio (sem "lixo" inicial).
+    expect(component.hist().temp).toEqual([]);
+    expect(component.hist().rpm).toEqual([]);
+
     fixture.destroy();
   });
 });

@@ -71,27 +71,24 @@ export class Header implements OnInit, OnDestroy {
   }
 
   selecionar(id: number) {
-    this.dropdownAberto.set(false);
+  this.dropdownAberto.set(false);
 
     const anterior = this.state.veiculoSelecionado();
     if (id === anterior) return;
 
-    // Descobre o tipo de falha do veículo recém-escolhido (já temos a lista em memória)
-    const v = this.veiculos().find(x => x.id === id);
-    this.state.selecionar(id, v?.tipo_falha ?? 'normal');   // ← passa o tipo
-
-    const estavaSimulando = this.state.simulacaoAtiva();
-
-    if (estavaSimulando) {
-      this.simulacao.iniciarSimulacao(id, this.intervalo()).subscribe({
-        next: () => this.state.simulacaoAtiva.set(true),
-        error: (e) => {
-          console.error('Erro ao reiniciar simulação:', e);
-          this.state.simulacaoAtiva.set(false);
-        },
+    // [NOVO] Para a simulação ANTES de trocar de veículo.
+    // A UI fica pronta para o usuário clicar em "Simular" no veículo novo.
+    if (this.state.simulacaoAtiva()) {
+      this.simulacao.pararSimulacao().subscribe({
+        next: () => this.state.simulacaoAtiva.set(false),
+        // Em caso de erro, o polling de status (1s) sincroniza sozinho.
+        error: () => {},
       });
     }
-  }
+
+    const v = this.veiculos().find(x => x.id === id);
+    this.state.selecionar(id, v?.tipo_falha ?? 'normal');
+    }
 
   private carregarVeiculos() {
     this.api.listarVeiculos().subscribe({

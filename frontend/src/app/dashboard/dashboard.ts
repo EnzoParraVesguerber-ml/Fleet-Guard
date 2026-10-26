@@ -1,8 +1,8 @@
 import { Component, inject, OnDestroy, effect, signal, computed, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TelemetriaService, TelemetriaAtual } from '../services/telemetria.service';
+import { TelemetriaService, TelemetriaAtual, AlertaHistorico } from '../services/telemetria.service';
 import { Subscription } from 'rxjs';
-import { FrotaState } from '../services/frota-state';
+import { FrotaState, TIPO_FALHA_DESC } from '../services/frota-state';
 import { SensorCard } from '../sensor-card/sensor-card';
 import { Panel } from '../panel/panel';
 import { StatusPanel } from '../status-panel/status-panel';
@@ -10,14 +10,9 @@ import { PredictionPanel } from '../prediction-panel/prediction-panel';
 import { MotorTelemetryChart } from './motor-telemetry-chart/motor-telemetry-chart';
 import { Prediction, SensorReading, StatusItem } from '../models/telemetry';
 
-interface Alert {
-  title: string;
-  meta: string;
-  time: string;
-}
-
 const HIST_SIZE = 30;
 const POLL_MS = 2000;
+const ALERTS_LIMIT = 20;
 
 @Component({
   selector: 'app-dashboard',
@@ -35,12 +30,9 @@ export class Dashboard implements OnDestroy {
   prediction    = signal<Prediction | null>(null);
   motorStatus   = signal<StatusItem[]>([]);
   brakeStatus   = signal<StatusItem[]>([]);
-  alerts        = signal<Alert[]>([]);
+  alertHistory  = signal<AlertaHistorico[]>([]);
   carregando    = signal(false);
   erro          = signal<string | null>(null);
-  // [INTEGRAÇÃO - ITEM 4] Guarda o JSON recebido sem formatar os valores.
-  // O signal notifica a tela quando uma resposta chega; null indica ausência de leitura.
-  dadosTelemetria = signal<TelemetriaAtual | null>(null);
 
   hist = signal({
     rpm:        [] as number[],
@@ -56,15 +48,15 @@ export class Dashboard implements OnDestroy {
   });
 
   private pollId: any = null;
-  private ultimoTsVisto: number | null = null;      // NOVO
-  // [INTEGRAÇÃO - APOIO] Agrupa as consultas para cancelá-las ao trocar de veículo ou sair.
+  private ultimoTsVisto: number | null = null;
   private requisicoes = new Subscription();
+  // [NOVO] Marca que a próxima leitura é a "primeira do veículo" —
+  // ela atualiza os cards mas NÃO entra no histórico do gráfico.
+  private primeiraLeituraDoVeiculo = true;
 
   constructor() {
     effect(() => {
       const id = this.state.veiculoSelecionado();
-      // [INTEGRAÇÃO - APOIO] Só a seleção deve reiniciar as consultas periódicas.
-      // untracked evita que leituras de outros signals dentro da rotina virem dependências.
       if (id != null) untracked(() => this.reiniciarPolling(id));
     });
   }
@@ -75,31 +67,29 @@ export class Dashboard implements OnDestroy {
 
   private reiniciarPolling(veiculoId: number) {
     this.pararPolling();
-    this.limparTudo();                    // ← era limparHistorico()
-    this.ultimoTsVisto = null;            // NOVO
+    this.limparTudo();
+    this.ultimoTsVisto = null;
+    this.primeiraLeituraDoVeiculo = true;   // [NOVO]
     this.carregando.set(true);
-    this.erro.set(null);                  // NOVO
+    this.erro.set(null);
     this.buscar(veiculoId);
     this.pollId = setInterval(() => this.buscar(veiculoId), POLL_MS);
   }
 
   private pararPolling() {
     if (this.pollId) { clearInterval(this.pollId); this.pollId = null; }
-    // [INTEGRAÇÃO - APOIO] Impede respostas pendentes de atualizarem o veículo errado.
     this.requisicoes.unsubscribe();
     this.requisicoes = new Subscription();
   }
 
   private limparTudo() {
-    // [INTEGRAÇÃO - ITEM 4] Remove o JSON do veículo anterior durante a troca.
-    this.dadosTelemetria.set(null);
     this.hist.set({ rpm: [], temp: [], velocidade: [], pressao: [], vibracao: [] });
     this.engineSensors.set([]);
     this.brakeSensors.set([]);
     this.prediction.set(null);
     this.motorStatus.set([]);
     this.brakeStatus.set([]);
-    this.alerts.set([]);
+    this.alertHistory.set([]);
   }
 
   private buscar(veiculoId: number) {
@@ -108,16 +98,18 @@ export class Dashboard implements OnDestroy {
         this.carregando.set(false);
         this.erro.set(null);
 
-        // [INTEGRAÇÃO - ITEM 4] Armazena a resposta completa para a interpolação no HTML.
-        this.dadosTelemetria.set(l);
-
-        // [INTEGRAÇÃO - CORREÇÃO] A primeira leitura do banco não é mais descartada.
-        // O JSON acima sempre é atualizado; timestamps repetidos não duplicam o gráfico.
         if (l.timestamp === this.ultimoTsVisto) return;
-
-        // Dado realmente novo → aplica
         this.ultimoTsVisto = l.timestamp;
-        this.aplicarLeitura(l);
+
+        // [NOVO] Descarta a 1ª leitura após troca de veículo do histórico do
+        // gráfico (evita o "lixo" inicial), mas ainda atualiza os cards.
+        if (this.primeiraLeituraDoVeiculo) {
+          this.primeiraLeituraDoVeiculo = false;
+          this.aplicarLeitura(l, /* atualizarHistorico */ false);
+          return;
+        }
+
+        this.aplicarLeitura(l, /* atualizarHistorico */ true);
       },
       error: (e) => {
         this.carregando.set(false);
@@ -128,27 +120,34 @@ export class Dashboard implements OnDestroy {
         }
       },
     }));
+
+    this.requisicoes.add(this.api.listarAlertas(veiculoId, ALERTS_LIMIT).subscribe({
+      next: (alertas) => this.alertHistory.set(alertas),
+      error: () => {},
+    }));
   }
 
-  private aplicarLeitura(l: TelemetriaAtual) {
+  private aplicarLeitura(l: TelemetriaAtual, atualizarHistorico = true) {
     const tempMotor = l.temp_motor ?? 0;
     const rpm       = l.rpm ?? 0;
     const pressao   = l.pressao_oleo ?? 0;
     const vibracao  = l.vibracao ?? 0;
     const velocidade = l.velocidade_kmh_spn84 ?? 0;
 
-    const h = this.hist();
-    const trim = (arr: number[], v: number) => {
-      const next = [...arr, v];
-      return next.length > HIST_SIZE ? next.slice(-HIST_SIZE) : next;
-    };
-    this.hist.set({
-      rpm:        trim(h.rpm, rpm),
-      temp:       trim(h.temp, tempMotor),
-      velocidade: trim(h.velocidade, velocidade),
-      pressao:    trim(h.pressao, pressao),
-      vibracao:   trim(h.vibracao, vibracao),
-    });
+    if (atualizarHistorico) {
+      const h = this.hist();
+      const trim = (arr: number[], v: number) => {
+        const next = [...arr, v];
+        return next.length > HIST_SIZE ? next.slice(-HIST_SIZE) : next;
+      };
+      this.hist.set({
+        rpm:        trim(h.rpm, rpm),
+        temp:       trim(h.temp, tempMotor),
+        velocidade: trim(h.velocidade, velocidade),
+        pressao:    trim(h.pressao, pressao),
+        vibracao:   trim(h.vibracao, vibracao),
+      });
+    }
 
     const alertaAtivo = (l.alerta_preditivo ?? '').toLowerCase().includes('alerta');
 
@@ -195,7 +194,7 @@ export class Dashboard implements OnDestroy {
       failureProbability: l.prob_falha ?? (alertaAtivo ? 0.5 : 0.5),
       model: 'Random Forest · janela de 30 leituras',
       updatedAt: 'agora',
-      failureType: alertaAtivo ? tipoFalhaTexto : undefined,   // ← NOVO
+      failureType: alertaAtivo ? tipoFalhaTexto : undefined,
     });
 
     this.motorStatus.set([
@@ -210,15 +209,25 @@ export class Dashboard implements OnDestroy {
       { label: 'Vibração do freio', detail: `${vibracao.toFixed(3)} g RMS`, status: vibStatus },
       { label: 'Velocidade',        detail: `${velocidade.toFixed(1)} km/h`, status: 'ok' },
     ]);
+  }
 
-    if (alertaAtivo) {
-      this.alerts.set([{
-        title: `Alerta preditivo — Ônibus ${this.veiculoLabel()}`,
-        meta:  `${tipoFalhaTexto} — padrão de falha iminente`,   // ← NOVO
-        time:  'agora',
-      }]);
-    } else {
-      this.alerts.set([]);
+  // ── Helpers de apresentação do histórico ──
+  protected tipoFalhaDescricao(tipo: string): string {
+    return TIPO_FALHA_DESC[tipo as keyof typeof TIPO_FALHA_DESC] ?? 'Falha registrada';
+  }
+
+  protected formatarProb(p: number): string {
+    return Math.round((p ?? 0) * 100).toString();
+  }
+
+  protected formatarHora(iso: string): string {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString('pt-BR', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+    } catch {
+      return '—';
     }
   }
 }

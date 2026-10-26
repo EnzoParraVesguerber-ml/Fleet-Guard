@@ -4,9 +4,8 @@ import pandas as pd
 import joblib
 
 # 1. Importa a factory e os modelos do seu próprio projeto
-# (Ajuste "backend_api.app" se o seu __init__.py estiver em outro diretório)
 from backend.backend_api.app import create_app 
-from backend.database.models import db, Telemetria, Veiculo
+from backend.database.models import db, Telemetria, Veiculo, Alerta
 
 # 2. Inicializa o App com a configuração correta do banco (PostgreSQL)
 app = create_app()
@@ -17,6 +16,26 @@ scaler = joblib.load('backend/backend_api/ml_pipeline/fleetguard_scaler.joblib')
 frota_buffer = {}
 
 frota_prob = {}
+frota_classe_anterior = {}   # {veiculo_id: classe_prevista} — usado para detectar transições
+
+
+def _classificar_tipo_falha(dados):
+    """
+    Deriva o tipo de falha a partir dos sensores da própria leitura,
+    usando os mesmos limiares do /api/veiculos.
+    """
+    temp  = dados.get('temp_motor_spn110') or 0
+    vib   = dados.get('vibracao_freio') or 0
+    cubo  = dados.get('temp_cubo_roda_ir') or 0
+
+    if cubo > 55:
+        return 'freio'
+    if vib > 0.30:
+        return 'rolamento'
+    if temp > 100:
+        return 'motor'
+    return 'desconhecido'
+
 
 @app.route('/api/telemetria', methods=['POST'])
 def receber_telemetria():
@@ -40,7 +59,6 @@ def receber_telemetria():
         df_buffer[f'{col}_std_30'] = df_buffer[col].std() if len(df_buffer) > 1 else 0.0
         
     # --- B. Inferência do Modelo ---
-    # Ordem EXATA usada no treino (train_model.py depois do drop):
     FEATURES_ORDEM = [
         'velocidade_kmh_spn84',
         'rpm_spn190',
@@ -63,22 +81,19 @@ def receber_telemetria():
     X_scaled = scaler.transform(X_inferencia)
     predicao = modelo.predict(X_scaled)[0]
 
-    # Pega a probabilidade da classe "Alerta: Falha Iminente"
     proba = modelo.predict_proba(X_scaled)[0]
     classes = list(modelo.classes_)
-    idx_falha = classes.index("Alerta: Falha Iminente")   # ajuste se seu label for diferente
+    idx_falha = classes.index("Alerta: Falha Iminente")
     prob_falha = float(proba[idx_falha])
     frota_prob[vid] = prob_falha
     
-    # --- C. Persistência no Banco de Dados (NOVO) ---
-    # Verifica se o veículo existe para não dar erro de ForeignKey
+    # --- C. Persistência no Banco de Dados ---
     veiculo = db.session.get(Veiculo, vid)
     if not veiculo:
         veiculo = Veiculo(id=vid)
         db.session.add(veiculo)
         db.session.commit()
 
-    # Salva a leitura atual na tabela de telemetria
     nova_telemetria = Telemetria(
         veiculo_id=vid,
         timestamp=dados.get('timestamp'),
@@ -92,22 +107,35 @@ def receber_telemetria():
         status_porta=dados.get('status_porta'),
         tensao_bateria_v=dados.get('tensao_bateria_v'),
         codigo_erro_scanner=dados.get('codigo_erro_scanner'),
-        target=predicao  # Salvamos o status previsto pela IA
+        target=predicao
     )
-    
     db.session.add(nova_telemetria)
+
+    # --- D. Registro histórico de alerta (apenas na transição) ---
+    classe_ant = frota_classe_anterior.get(vid)
+    em_alerta     = "Alerta" in (predicao or "")
+    em_alerta_ant = classe_ant is not None and "Alerta" in (classe_ant or "")
+
+    if em_alerta and not em_alerta_ant:
+        db.session.add(Alerta(
+            veiculo_id=vid,
+            timestamp=dados.get('timestamp'),
+            classe_prevista=predicao,
+            probabilidade=prob_falha,
+            tipo_falha=_classificar_tipo_falha(dados),
+        ))
+    frota_classe_anterior[vid] = predicao
+
     db.session.commit()
-    
-    # --- D. Retorno ---
+
     return jsonify({
         "veiculo_id": vid,
         "alerta_preditivo": predicao,
-        "prob_falha": prob_falha,               # ← NOVO (0.0 a 1.0)
+        "prob_falha": prob_falha,
         "leituras_no_buffer": len(frota_buffer[vid])
     })
 
 
-    
 @app.route('/api/telemetria/atual/<int:veiculo_id>', methods=['GET'])
 def obter_telemetria_atual(veiculo_id):
     ultima_leitura = Telemetria.query.filter_by(veiculo_id=veiculo_id).order_by(Telemetria.id.desc()).first()
@@ -123,20 +151,42 @@ def obter_telemetria_atual(veiculo_id):
         "velocidade_kmh_spn84": ultima_leitura.velocidade_kmh_spn84,
         "alerta_preditivo": ultima_leitura.target,
         "timestamp": ultima_leitura.timestamp,
-        "prob_falha": frota_prob.get(veiculo_id),   # ← NOVO (pode ser None na 1ª vez)
+        "prob_falha": frota_prob.get(veiculo_id),
     })
-    
+
+
+# ─── Histórico de alertas por veículo ──────────────────────────
+@app.route('/api/veiculos/<int:veiculo_id>/alertas', methods=['GET'])
+def listar_alertas_veiculo(veiculo_id):
+    try:
+        limit = int(request.args.get('limit', 20))
+    except (TypeError, ValueError):
+        limit = 20
+    limit = max(1, min(limit, 200))
+
+    alertas = (Alerta.query
+               .filter_by(veiculo_id=veiculo_id)
+               .order_by(Alerta.id.desc())
+               .limit(limit)
+               .all())
+
+    return jsonify([{
+        "id": a.id,
+        "timestamp": a.timestamp,
+        "classe_prevista": a.classe_prevista,
+        "probabilidade": a.probabilidade,
+        "tipo_falha": a.tipo_falha,
+        # Sinaliza que é UTC para o browser interpretar corretamente
+        "criado_em": a.criado_em.isoformat() + 'Z' if a.criado_em else None,
+    } for a in alertas])
+
+
 @app.route('/api/veiculos/resumo', methods=['GET'])
 def resumo_frota():
-    """
-    Retorna quantos veículos existem, quantos estão 'ok' e quantos em alerta,
-    com base na ÚLTIMA leitura de telemetria de cada veículo.
-    """
     from sqlalchemy import func
 
     total = db.session.query(func.count(Veiculo.id)).scalar() or 0
 
-    # Subquery: id da última telemetria de cada veículo
     sub = (
         db.session.query(
             Telemetria.veiculo_id,
@@ -146,7 +196,6 @@ def resumo_frota():
         .subquery()
     )
 
-    # Junta com Telemetria para pegar o 'target' da última leitura
     ultimas = (
         db.session.query(Telemetria)
         .join(sub, Telemetria.id == sub.c.ultimo_id)
@@ -167,14 +216,9 @@ def resumo_frota():
 # ─── Lista de veículos disponíveis ─────────────────────────────
 @app.route('/api/veiculos', methods=['GET'])
 def listar_veiculos():
-    """
-    Retorna veículos com tipo de falha detectado a partir do dataset (CSV).
-    tipo_falha ∈ { normal, motor, freio, rolamento }
-    """
     from backend.backend_api.simulation_manager import _load_dataset
     df = _load_dataset()
 
-    # Detecta tipo de falha por veículo olhando o comportamento
     info_falha = {}
     if 'target' in df.columns:
         for vid, g in df.groupby('veiculo_id'):
@@ -183,7 +227,6 @@ def listar_veiculos():
                 info_falha[int(vid)] = 'normal'
                 continue
 
-            # Olha as últimas ~150 amostras em alerta pra caracterizar
             ult = em_alerta.tail(150)
             temp_alta = ult['temp_motor_spn110'].mean() > 100
             vib_alta  = ult['vibracao_freio'].mean() > 0.30
@@ -196,7 +239,7 @@ def listar_veiculos():
             elif cubo_alto:
                 info_falha[int(vid)] = 'freio'
             else:
-                info_falha[int(vid)] = 'motor'  # fallback
+                info_falha[int(vid)] = 'motor'
 
     veiculos = Veiculo.query.order_by(Veiculo.id).all()
     resultado = []
@@ -220,10 +263,14 @@ def iniciar_simulacao():
     dados = request.json or {}
     veiculo_id = dados.get('veiculo_id')
     intervalo  = dados.get('intervalo_s', 1.0)
-    inicio_pct = dados.get('inicio_pct')  # opcional: 0.0–1.0
+    inicio_pct = dados.get('inicio_pct')
 
     if veiculo_id is None:
         return jsonify({"erro": "veiculo_id obrigatório"}), 400
+
+    # [HISTÓRICO] Reseta o rastreador de transição desse veículo
+    # para que um novo replay gere um novo registro de alerta no banco.
+    frota_classe_anterior.pop(int(veiculo_id), None)
 
     ok, erro = sim_manager.start(
         veiculo_id=int(veiculo_id),

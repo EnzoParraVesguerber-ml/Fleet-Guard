@@ -1,6 +1,33 @@
-<div class="chart-container">
-  <canvas baseChart
-    [data]="chartData"
-    [options]="chartOptions">
-  </canvas>
+<div class="charts-row">
+
+  <section class="chart-card" role="img" aria-label="Telemetria do motor: temperatura e rotação">
+    <header class="chart-header">
+      <h3>Motor</h3>
+      <span class="chart-sub">Temperatura (°C) · Rotação (rpm)</span>
+    </header>
+    <div class="chart-canvas">
+      <canvas baseChart [data]="motorChartData" [options]="motorChartOptions"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-card" role="img" aria-label="Telemetria dos freios: vibração com limiares">
+    <header class="chart-header">
+      <h3>Freios e rodagem</h3>
+      <span class="chart-sub">Vibração (g RMS) · limiares atenção/crítico</span>
+    </header>
+    <div class="chart-canvas">
+      <canvas baseChart [data]="brakeChartData" [options]="brakeChartOptions"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-card" role="img" aria-label="Telemetria operacional: velocidade e pressão do óleo">
+    <header class="chart-header">
+      <h3>Operação</h3>
+      <span class="chart-sub">Velocidade (km/h) · Pressão do óleo (kPa)</span>
+    </header>
+    <div class="chart-canvas">
+      <canvas baseChart [data]="operationChartData" [options]="operationChartOptions"></canvas>
+    </div>
+  </section>
+
 </div>

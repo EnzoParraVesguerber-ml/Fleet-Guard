@@ -147,7 +147,7 @@ def treinar_modelos(rapido=False):
 
     # 5. Relatório Final e Exportação
     print("\n=======================================================")
-    print(f"🏆 O GRANDE VENCEDOR: {melhor_modelo_nome} (F1: {melhor_f1:.4f})")
+    print(f" O GRANDE VENCEDOR: {melhor_modelo_nome} (F1: {melhor_f1:.4f})")
     print("=======================================================\n")
     
     print("Métricas detalhadas do modelo vencedor no conjunto de teste:")
@@ -161,7 +161,7 @@ def treinar_modelos(rapido=False):
     joblib.dump(melhor_modelo_obj, caminho_modelo)
     joblib.dump(scaler, caminho_scaler)
     
-    print(f"✅ Pipeline concluído! Artefatos salvos em:")
+    print(f"Pipeline concluído! Artefatos salvos em:")
     print(f"   - {caminho_modelo}")
     print(f"   - {caminho_scaler}")
 
